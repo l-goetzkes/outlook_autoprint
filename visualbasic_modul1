@@ -1,0 +1,80 @@
+Sub Dokumente_speichern()
+
+    'HIER DEN PFAD ÄNDERN ! ! !
+    Const fcPath As String = "Z:\tkbc\TKBC-Info\Gescannte Dokumente"
+    
+    Dim olExplorer As Explorer
+    Dim olFolder As MAPIFolder
+    Dim olSelection As Selection
+    Dim olitem As MailItem
+    Dim lngAttCount As Long
+    Dim i As Long
+    Dim Anzahl As Long
+    Dim fcZahl As Integer
+    Dim fcName As String
+    Dim fcEndung As String
+    Dim dateiname As String
+    
+    Set olExplorer = Application.ActiveExplorer
+    Set olFolder = Application.ActiveExplorer.CurrentFolder
+    Anzahl = 0
+    
+    If Dir(fcPath, vbDirectory) <> "" Then
+        If olFolder.DefaultItemType = olMailItem Then
+            Set olSelection = olExplorer.Selection
+            
+            'Für jede Email die Makiert ist
+            For Each olitem In olSelection
+                lngAttCount = olitem.Attachments.Count
+                
+                'Falls es anhänge gibt
+                If lngAttCount > 0 Then
+                    
+                    'Für jeden Anhang
+                    For i = lngAttCount To 1 Step -1
+                        
+                        With olitem.Attachments.Item(i)
+                            
+                            'Falls Datei schon existiert einfach zahl hinter hängen
+                            If CreateObject("Scripting.FileSystemObject").FileExists(fcPath & "\" & .FileName) Then
+                                'Datei existiert schon -> Zahl hochzählen bis noch nicht existiert
+                                fcZahl = 2
+                                fcName = CreateObject("Scripting.FileSystemObject").GetBaseName(fcPath & "\" & .FileName)
+                                fcEndung = CreateObject("Scripting.FileSystemObject").GetExtensionName(fcPath & "\" & .FileName)
+                                While CreateObject("Scripting.FileSystemObject").FileExists(fcPath & "\" & fcName & "(" & CStr(fcZahl) & ")." & fcEndung)
+                                    fcZahl = fcZahl + 1
+                                Wend
+                                dateiname = fcName & "(" & CStr(fcZahl) & ")." & fcEndung
+                            Else
+                                'Datei existiert noch nicht
+                                dateiname = .FileName
+                            End If
+                            
+                            'Datei speichern
+                            .SaveAsFile fcPath & "\" & dateiname
+                            
+                        End With
+                        Anzahl = Anzahl + 1
+                    Next i
+                    
+                End If
+            
+            Next olitem
+            
+        Else
+            MsgBox "In diesem Ordner befinden sich keine E-Mail-Nachrichten."
+        End If
+        If Anzahl < 1 Then
+            MsgBox "Keine Anlagen vorhanden"
+        Else
+            If Anzahl < 2 Then
+                MsgBox Anzahl & " Anlage gespeichert"
+            Else
+                MsgBox Anzahl & " Anlagen gespeichert"
+            End If
+        End If
+    Else
+        MsgBox "Der im Makro zum speichern der Anhänge eingetragene Pfad ""fcPath"" existiert nicht!"
+    End If
+
+End Sub
